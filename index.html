@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111018">
+<title>Egg Radar — Steal an Egg</title>
+<style>
+:root{color-scheme:dark;--bg:#111018;--panel:#1b1924;--line:#393447;--purple:#a78bfa;--green:#86efac;--yellow:#fde68a;--muted:#b8b2c9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#29203d 0,#111018 48%);color:#fff;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:22px 16px 40px}
+header{padding:10px 0 20px}h1{font-size:32px;margin:8px 0}p{color:var(--muted);line-height:1.5}.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:6px 10px;color:var(--green);font-size:12px;letter-spacing:.08em}
+.card{background:rgba(27,25,36,.94);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 10px 30px #0003}
+h2{font-size:19px;margin:0 0 12px}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:120px}
+button,input,select{font:inherit;border-radius:12px;border:1px solid var(--line);padding:12px;background:#111018;color:#fff;width:100%}
+button{background:var(--purple);color:#171225;font-weight:700;border:0;cursor:pointer}button.secondary{background:#302a40;color:#fff;border:1px solid var(--line)}button:active{transform:scale(.99)}
+.status{border-radius:12px;padding:12px;background:#121c18;color:var(--green);line-height:1.45}
+.notice{font-size:13px;color:var(--yellow);line-height:1.5}.egg{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:12px 0}.egg:last-child{border:0}.egg b{display:block}.egg small{color:var(--muted)}
+footer{font-size:12px;color:var(--muted);line-height:1.5;padding:12px 2px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<span class="tag">SAFARI • IPHONE</span>
+<h1>🥚 Egg Radar</h1>
+<p>Panel personal para <b>Steal an Egg</b>. Guarda objetivos y consulta el estado desde Safari.</p>
+</header>
+
+<section class="card">
+<h2>📡 Estado del radar</h2>
+<div id="status" class="status">Página lista. La detección automática está desactivada hasta conectar una fuente de datos real.</div>
+<p class="notice">Esta página no puede ver el servidor de Roblox por sí sola ni confirmar qué huevo acaba de aparecer. No inventa detecciones.</p>
+<div class="row">
+<button id="notify">Activar avisos</button>
+<button id="test" class="secondary">Probar aviso</button>
+</div>
+</section>
+
+<section class="card">
+<h2>🎯 Huevos que quieres vigilar</h2>
+<label for="eggName">Nombre del huevo</label>
+<div class="row" style="margin-top:8px">
+<select id="eggName">
+<option>Divino</option><option>Eterno</option><option>Secreto</option><option>Otro</option>
+</select>
+<input id="customEgg" placeholder="Nombre personalizado (opcional)">
+</div>
+<div class="row" style="margin-top:10px">
+<button id="add">Añadir objetivo</button>
+<button id="clear" class="secondary">Borrar lista</button>
+</div>
+<div id="eggs"></div>
+</section>
+
+<section class="card">
+<h2>🔗 Conexión de datos</h2>
+<p>Para mostrar apariciones reales, hace falta una API pública/permitida del juego o un servicio propio que entregue datos. No introduzcas tu contraseña de Roblox ni cookies aquí.</p>
+<label for="endpoint">URL de una fuente de datos (si ya tienes una)</label>
+<input id="endpoint" placeholder="https://tu-servicio.example/api/eggs" autocapitalize="off" autocomplete="off">
+<div class="row" style="margin-top:10px">
+<button id="saveEndpoint">Guardar URL</button>
+<button id="check" class="secondary">Comprobar</button>
+</div>
+<p id="sourceResult" class="notice">Sin fuente configurada.</p>
+</section>
+
+<section class="card">
+<h2>📲 Abrir en Safari</h2>
+<p>Cuando publiques esta página en Render, podrás abrir su dirección en Safari. Puedes añadirla a la pantalla de inicio desde el botón Compartir de Safari → <b>Añadir a pantalla de inicio</b>.</p>
+</section>
+
+<footer>
+Prototipo inicial: lista local y avisos de prueba. Las notificaciones dependen del permiso del navegador y de que la página siga abierta; iOS puede suspender páginas en segundo plano. No teletransporta personajes ni controla Roblox.
+</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+let targets=load('eggRadarTargets',['Divino','Eterno']);
+function render(){
+ $('eggs').innerHTML='';
+ targets.forEach((name,i)=>{
+  const div=document.createElement('div');div.className='egg';
+  const label=document.createElement('div');label.innerHTML='<b></b><small>Objetivo guardado en este iPhone</small>';label.querySelector('b').textContent='🥚 '+name;
+  const btn=document.createElement('button');btn.className='secondary';btn.style.width='auto';btn.textContent='Quitar';btn.onclick=()=>{targets.splice(i,1);saveTargets();render()};
+  div.append(label,btn);$('eggs').append(div);
+ });
+}
+function saveTargets(){localStorage.setItem('eggRadarTargets',JSON.stringify(targets))}
+function setStatus(t){$('status').textContent=t}
+async function notify(title,body){
+ if(!('Notification' in window)){alert(body);return}
+ if(Notification.permission==='granted'){new Notification(title,{body});return}
+ if(Notification.permission==='denied'){alert('Los avisos están bloqueados en Safari. Puedes activarlos en los ajustes del sitio.');return}
+ const p=await Notification.requestPermission();
+ if(p==='granted') new Notification(title,{body}); else alert(body);
+}
+$('add').onclick=()=>{let name=$('customEgg').value.trim()||$('eggName').value;if(!targets.includes(name)){targets.push(name);saveTargets();render()}$('customEgg').value=''};
+$('clear').onclick=()=>{if(confirm('¿Borrar todos los objetivos?')){targets=[];saveTargets();render()}};
+$('notify').onclick=async()=>{try{await notify('Egg Radar','Avisos de prueba activados.');setStatus('Permiso de avisos solicitado. Esto no activa detección real por sí solo.')}catch(e){setStatus('Safari no permitió activar los avisos desde este contexto. Prueba después de publicar la página por HTTPS.')}};
+$('test').onclick=()=>notify('🥚 Egg Radar — prueba','Este es un aviso de prueba; no significa que haya aparecido un huevo.');
+$('saveEndpoint').onclick=()=>{const v=$('endpoint').value.trim();localStorage.setItem('eggRadarEndpoint',v);$('sourceResult').textContent=v?'URL guardada en este iPhone. Pulsa “Comprobar” para probarla.':'Sin fuente configurada.'};
+$('endpoint').value=localStorage.getItem('eggRadarEndpoint')||'';
+$('check').onclick=async()=>{
+ const url=$('endpoint').value.trim();if(!url){$('sourceResult').textContent='Primero introduce una URL de API válida.';return}
+ localStorage.setItem('eggRadarEndpoint',url);$('sourceResult').textContent='Comprobando…';
+ try{const r=await fetch(url,{headers:{'Accept':'application/json'}});if(!r.ok)throw new Error('HTTP '+r.status);const data=await r.json();$('sourceResult').textContent='Conexión correcta. Respuesta recibida: '+JSON.stringify(data).slice(0,350);setStatus('Fuente consultada correctamente; revisa la respuesta antes de configurar detecciones.')}
+ catch(e){$('sourceResult').textContent='No se pudo consultar la fuente (CORS, URL o servidor). Detalle: '+e.message}
+};
+render();
+</script>
+</body>
+</html>
